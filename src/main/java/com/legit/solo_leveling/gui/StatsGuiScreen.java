@@ -4,8 +4,8 @@ import com.legit.solo_leveling.SoloLevelingMod;
 import com.legit.solo_leveling.capability.PlayerLevelCapability;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -17,10 +17,11 @@ import net.minecraftforge.fml.common.Mod;
 public class StatsGuiScreen extends Screen {
 
     private final Player player;
-
-    // Define the width and height of the GUI
-    private static final int WIDTH = 300; // Increased width for more stats
-    private static final int HEIGHT = 150; // Increased height for more stats
+    private static final int WIDTH = 300; // Width of the GUI
+    private static final int HEIGHT = 180; // Increased height for buttons
+    private Button closeButton; // Button to close the GUI
+    private Button skillsButton; // Button to open skills menu
+    private Button levelUpButton; // Button to level up the player
 
     // Constructor
     public StatsGuiScreen(Player player) {
@@ -29,8 +30,24 @@ public class StatsGuiScreen extends Screen {
     }
 
     @Override
+    protected void init() {
+        // Initialize buttons here
+        closeButton = addRenderableWidget(new Button(this.width / 2 - 50, this.height / 2 + 80, 100, 20,
+                new TextComponent("Close"), button -> {
+            // Action on button click
+            Minecraft.getInstance().setScreen(null); // Close the GUI
+        }));
+
+        skillsButton = addRenderableWidget(new Button(this.width / 2 - 50, this.height / 2 + 50, 100, 20,
+                new TextComponent("Skills"), button -> {
+            // Open the skills menu
+            Minecraft.getInstance().setScreen(new SkillsGuiScreen(player));
+        }));
+    }
+
+    @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        // Render background first to avoid overlay issues
+        // Render background
         drawCustomBackground(poseStack);
         drawTitle(poseStack); // Draw title
         drawStats(poseStack); // Draw stats
@@ -43,14 +60,12 @@ public class StatsGuiScreen extends Screen {
         return false; // Make sure the game doesn't pause when the GUI is open
     }
 
-    // Method to draw custom background
     private void drawCustomBackground(PoseStack poseStack) {
         // Fill the background with a lighter semi-transparent blue color (ARGB format)
         fill(poseStack, (this.width - WIDTH) / 2, (this.height - HEIGHT) / 2,
                 (this.width + WIDTH) / 2, (this.height + HEIGHT) / 2, 0xAA0000FF); // Lighter semi-transparent blue
     }
 
-    // Method to draw the title
     private void drawTitle(PoseStack poseStack) {
         Minecraft minecraft = Minecraft.getInstance();
         String titleText = "Status";
@@ -62,13 +77,10 @@ public class StatsGuiScreen extends Screen {
                 (this.width - titleWidth) / 2, (this.height - HEIGHT) / 2 + 10, textColor);
     }
 
-    // Method to draw the stats
     private void drawStats(PoseStack poseStack) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        // Get player level and XP from the capability
         player.getCapability(PlayerLevelCapability.INSTANCE).ifPresent(cap -> {
-            // Retrieve player stats
             String playerName = player.getName().getString();
             String job = "Warrior"; // Replace with actual job
             String title = "Champion"; // Replace with actual title
@@ -79,7 +91,6 @@ public class StatsGuiScreen extends Screen {
             int fatigue = 0; // Replace with actual fatigue
             int manaPoints = 100; // Replace with actual MP
 
-            // Customize text appearance
             int textColor = 0xFFFFFFFF; // White text
 
             // Draw left side stats
@@ -104,7 +115,6 @@ public class StatsGuiScreen extends Screen {
         });
     }
 
-    // Method to update the GUI every tick
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {

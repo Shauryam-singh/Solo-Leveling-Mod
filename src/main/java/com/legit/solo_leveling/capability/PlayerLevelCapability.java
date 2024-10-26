@@ -1,21 +1,27 @@
 package com.legit.solo_leveling.capability;
 
+import com.legit.solo_leveling.gui.LevelUpGuiScreen;
+import com.legit.solo_leveling.network.LevelUpPacket;
+import com.legit.solo_leveling.network.NetworkHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraftforge.network.PacketDistributor;
 
 public class PlayerLevelCapability implements INBTSerializable<CompoundTag> {
     public static final Capability<PlayerLevelCapability> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {});
 
     private int xp = 0;
     private int level = 1;
+    private int requiredXp = 100; // Default initial required XP
 
-    // Remove requiredXp as a field; use getRequiredXp() method instead
     public int getXp() { return xp; }
     public int getLevel() { return level; }
 
@@ -24,6 +30,7 @@ public class PlayerLevelCapability implements INBTSerializable<CompoundTag> {
         return 100 * level; // Adjust this formula if needed
     }
 
+    // Method to add XP and handle leveling up
     public void addXp(int amount, Player player) {
         this.xp += amount;
         if (this.xp >= getRequiredXp()) {
@@ -32,16 +39,15 @@ public class PlayerLevelCapability implements INBTSerializable<CompoundTag> {
         // Save or sync capability changes here if necessary
     }
 
-    public void levelUp(Player player) { // Accept Player parameter
+    // Level up method
+    public void levelUp(Player player) {
         this.level++; // Increment the player's level
         this.xp -= getRequiredXp(); // Subtract the required XP for the current level
 
-        // Optionally increase the required XP for the next level
-        // No need for a separate field, just call the method
-        // Notify the player of their level up
-        player.sendMessage(new TextComponent("You've leveled up to level " + level + "!"), player.getUUID());
+        // Send the LevelUpPacket to the client to open the GUI
+        NetworkHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new LevelUpPacket());
 
-        // Apply benefits
+        // Optionally increase the required XP for the next level
         applyLevelUpBenefits(player); // Pass the player reference
     }
 
@@ -51,11 +57,26 @@ public class PlayerLevelCapability implements INBTSerializable<CompoundTag> {
         // Example: player.setHealth(player.getHealth() + 2.0F);
     }
 
+    // Setters for xp, level, and required XP
+    public void setXp(int xp) {
+        this.xp = xp;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    // Optional method to set required XP directly
+    public void setRequiredXp(int requiredXp) {
+        this.requiredXp = requiredXp; // Directly set the required XP
+    }
+
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("xp", xp);
         tag.putInt("level", level);
+        tag.putInt("requiredXp", getRequiredXp()); // Store calculated required XP
         return tag;
     }
 
@@ -63,5 +84,6 @@ public class PlayerLevelCapability implements INBTSerializable<CompoundTag> {
     public void deserializeNBT(CompoundTag tag) {
         this.xp = tag.getInt("xp");
         this.level = tag.getInt("level");
+        this.requiredXp = tag.getInt("requiredXp"); // Read required XP from NBT
     }
 }
