@@ -1,0 +1,11 @@
+modLoader="javafml"
+loaderVersion="[40,)"
+license="MIT"
+issueTrackerURL="https://github.com/user/repo/issues"
+
+[[mods]]
+modId="solo_leveling"
+version="1.0.0"
+displayName="Solo Leveling Mod"
+description="A mod that adds leveling and abilities similar to the Solo Leveling anime/manga."
+authors="Legit Killer"
